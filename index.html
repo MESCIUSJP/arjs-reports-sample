@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f8fafc" />
+    <title>ActiveReportsJS レポートビューアー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.mescius.com/activereportsjs/6.latest/styles/ar-js-ui.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.mescius.com/activereportsjs/6.latest/styles/ar-js-viewer.css"
+    />
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        overflow: auto;
+      }
+
+      body.font-sans {
+        font-family: "Noto Sans JP", sans-serif;
+      }
+
+      #viewer-section {
+        height: 100vh;
+        height: 100dvh;
+        flex: none;
+      }
+
+      #viewer-host {
+        width: 100%;
+        height: 100%;
+      }
+
+    </style>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/ar-js-core.js"></script>
+    <script src="license.js"></script>
+    <script>
+      const distributionKey = window.ARJS_DISTRIBUTION_KEY?.trim();
+      if (distributionKey) {
+        MESCIUS.ActiveReportsJS.Core.setLicenseKey(distributionKey);
+      }
+    </script>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/ar-js-viewer.js"></script>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/ar-js-pdf.js"></script>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/ar-js-tabular-data.js"></script>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/ar-js-html.js"></script>
+    <script src="https://cdn.mescius.com/activereportsjs/6.latest/dist/locales/ar-js-locales.js"></script>
+  </head>
+  <body class="bg-slate-100 font-sans text-slate-900 antialiased">
+    <div class="flex h-screen min-h-0 flex-col md:flex-row">
+      <aside class="flex max-h-64 w-full shrink-0 flex-col border-b border-slate-200 bg-white md:max-h-none md:w-72 md:border-b-0 md:border-r">
+        <div class="border-b border-slate-200 px-5 py-5">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H14v16h4.5a1.5 1.5 0 0 0 1.5-1.5z" />
+                <path d="M10 7h4M10 11h4M10 15h4" />
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-sm font-semibold tracking-tight">レポートビューアー</h1>
+              <p class="mt-0.5 text-xs text-slate-500">ActiveReportsJS</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col px-3 py-4">
+          <div class="mb-3 flex items-center justify-between px-2">
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">エクスプローラー</h2>
+            <span id="report-count" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">0</span>
+          </div>
+          <label class="relative mb-3 block px-1">
+            <span class="sr-only">レポートを検索</span>
+            <svg viewBox="0 0 20 20" class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="5.5" />
+              <path d="m13 13 4 4" />
+            </svg>
+            <input id="report-search" type="search" placeholder="レポートを検索..." class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
+          </label>
+          <div class="mb-2 flex items-center gap-2 px-2 text-xs text-slate-400">
+            <svg viewBox="0 0 20 20" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M2.5 5.5h6l1.7 2H17a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" />
+              <path d="M2.5 5.5v-1a1 1 0 0 1 1-1H8l1.5 2" />
+            </svg>
+            <span>Reports</span>
+          </div>
+          <nav id="report-list" aria-label="レポート一覧" class="min-h-0 flex-1 space-y-1 overflow-y-auto px-1"></nav>
+          <p id="list-message" role="status" class="px-2 py-2 text-xs text-slate-500">レポートを読み込み中...</p>
+        </div>
+        <div class="border-t border-slate-200 px-5 py-3 text-xs text-slate-400">
+          レポートファイルは Reports フォルダーにあります
+        </div>
+      </aside>
+
+      <main class="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header class="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3 sm:px-7">
+          <div class="min-w-0">
+            <p class="mb-1 text-xs text-slate-400">レポート / <span id="breadcrumb-name" class="text-slate-500">選択してください</span></p>
+            <h2 id="current-report" class="truncate text-base font-semibold">レポートを選択</h2>
+          </div>
+          <div class="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:flex">
+            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+            ビューアー
+          </div>
+        </header>
+        <div id="viewer-message" role="status" aria-live="polite" class="hidden shrink-0 border-b border-slate-200 bg-blue-50 px-5 py-2 text-sm text-blue-800 sm:px-7"></div>
+        <section id="viewer-section" aria-label="帳票プレビュー" class="min-h-0 overflow-hidden bg-slate-100 p-3 sm:p-6">
+          <div class="h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div id="viewer-host"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const viewer = new MESCIUS.ActiveReportsJS.ReportViewer.Viewer("#viewer-host", {
+        language: "ja",
+      });
+      const reportList = document.querySelector("#report-list");
+      const reportSearch = document.querySelector("#report-search");
+      const reportCount = document.querySelector("#report-count");
+      const listMessage = document.querySelector("#list-message");
+      const viewerMessage = document.querySelector("#viewer-message");
+      const currentReport = document.querySelector("#current-report");
+      const breadcrumbName = document.querySelector("#breadcrumb-name");
+      let reports = [];
+      let activeFile = "";
+      let loading = false;
+
+      function setViewerMessage(message, isError = false) {
+        viewerMessage.textContent = message;
+        viewerMessage.classList.toggle("hidden", !message);
+        viewerMessage.classList.toggle("bg-red-50", isError);
+        viewerMessage.classList.toggle("text-red-700", isError);
+        viewerMessage.classList.toggle("bg-blue-50", !isError);
+        viewerMessage.classList.toggle("text-blue-800", !isError);
+      }
+
+      function renderReports() {
+        const keyword = reportSearch.value.trim().toLocaleLowerCase("ja");
+        const filteredReports = reports.filter((report) =>
+          report.name.toLocaleLowerCase("ja").includes(keyword),
+        );
+        reportList.replaceChildren();
+        reportCount.textContent = String(filteredReports.length);
+
+        for (const report of filteredReports) {
+          const button = document.createElement("button");
+          const isActive = report.file === activeFile;
+          button.type = "button";
+          button.disabled = loading;
+          button.setAttribute("aria-current", isActive ? "page" : "false");
+          button.className = `group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+            isActive
+              ? "bg-blue-50 font-medium text-blue-700"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          } disabled:cursor-wait disabled:opacity-60`;
+          button.innerHTML = `
+            <svg viewBox="0 0 20 20" class="h-4 w-4 shrink-0 ${isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-500"}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M5 2.75h6l4 4v10.5H5z" />
+              <path d="M11 2.75v4h4M7.5 11h5M7.5 14h5" />
+            </svg>
+            <span class="truncate"></span>
+          `;
+          button.querySelector("span").textContent = report.name;
+          button.addEventListener("click", () => openReport(report));
+          reportList.append(button);
+        }
+
+        listMessage.textContent = filteredReports.length
+          ? ""
+          : reports.length
+            ? "一致するレポートがありません。"
+            : "レポートがありません。";
+      }
+
+      async function openReport(report) {
+        if (loading || report.file === activeFile) return;
+        loading = true;
+        renderReports();
+        setViewerMessage("帳票を読み込んでいます...");
+
+        try {
+          await viewer.open(`Reports/${encodeURIComponent(report.file)}`);
+          activeFile = report.file;
+          currentReport.textContent = report.name;
+          breadcrumbName.textContent = report.name;
+          setViewerMessage("");
+        } catch (error) {
+          console.error("レポートを開けませんでした:", error);
+          setViewerMessage(`「${report.name}」を開けませんでした。Reports フォルダー内のレポートファイルを確認してください。`, true);
+        } finally {
+          loading = false;
+          renderReports();
+        }
+      }
+
+      async function listReportsFromDirectory() {
+        const directoryUrl = new URL("Reports/", document.baseURI);
+        const response = await fetch(directoryUrl);
+        if (!response.ok) throw new Error(`フォルダー一覧の取得に失敗しました (${response.status})`);
+
+        const directoryDocument = new DOMParser().parseFromString(
+          await response.text(),
+          "text/html",
+        );
+        const files = [...directoryDocument.querySelectorAll("a[href]")]
+          .map((link) => {
+            try {
+              const url = new URL(link.getAttribute("href"), directoryUrl);
+              if (url.origin !== directoryUrl.origin || !url.pathname.startsWith(directoryUrl.pathname)) return null;
+              const path = decodeURIComponent(url.pathname.slice(directoryUrl.pathname.length));
+              return path && !path.includes("/") && path.toLowerCase().endsWith(".rdlx-json")
+                ? path
+                : null;
+            } catch {
+              return null;
+            }
+          })
+          .filter((file) => file !== null);
+
+        return [...new Set(files)]
+          .map((file) => ({ name: file, file }))
+          .sort((a, b) => a.name.localeCompare(b.name, "ja"));
+      }
+
+      async function initialize() {
+        try {
+          reports = await listReportsFromDirectory();
+          renderReports();
+          if (reports.length) await openReport(reports[0]);
+        } catch (error) {
+          console.error("レポート一覧を読み込めませんでした:", error);
+          listMessage.textContent = "Reports フォルダーを一覧取得できません。ディレクトリ一覧に対応した HTTP サーバー経由で開いてください。";
+          setViewerMessage("Reports フォルダーを参照できませんでした。", true);
+        }
+      }
+
+      reportSearch.addEventListener("input", renderReports);
+      initialize();
+    </script>
+  </body>
+</html>
